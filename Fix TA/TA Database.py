@@ -16,6 +16,7 @@ import time
 import gc
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+import time
 
 def getMetaData(imgname, out):
     try:
@@ -28,45 +29,59 @@ def getMetaData(imgname, out):
         print ("found meta data!")
         for (tag, value) in info.items():
           tagname = TAGS.get(tag, tag)
-          metaData[tagname] = value
-          if not out:
-            print (tagname, value)
-          
-        if not out:
-          print ("Outputting to file...")
+          metaData[tagname] = value                   
+          print(tagname, value)
           with open(out, 'w') as f:
             for (tagname, value) in metaData.items():
               f.write(str(tagname)+"\t"+\
                 str(value)+"\n")
-    except :
+          
+    except Exception as e:
         print("Failed...")
+        print(e)
 
+getMetaData("image.jpg", "image.csv")
 # x sebagai counter
 x = 1   #Counter file
-k = 0   #Counter Sukses
+y = 1   #Counter Sukses
 z = 0   #Counter Gagal
-link = open("Image/Tarantula.txt", "r")
+link = open("scrap_url.txt", "r").read().split("\n")
+#with open("Images.txt", 'rb') as f:
+  #link = f.read()
 for a in link :
-    print(f"Link : {a}")
+    
+    
     try:
-        urllib.request.urlretrieve(f"{a}", "image.jpg")                             # Mendownload URL dan menyimpannya sebagai file image.jpg
-        getMetaData("image.jpg", f"Metadata/Metadata{x}.csv")                       # Mengambil metadata dari image.jpg dan menyimpannya ke CSV
-        df = pd.read_csv(open(f"Metadata/Metadata{x}.csv", "w"), sep="\t", header=None)  
-        df['URL'] = a                                                                # Transpose CSV
-        df.to_csv(f"C:/ProgramData/MySQL/MySQL Server 5.7/Uploads/Metadata{x}URL.csv", sep="\t", header=None) #disimpan di lokasi yang bisa untuk LOAD DATA MySQL
-        x += 1
-        os.remove("image.jpg")                                                      # Menghapus file image.jpg
-        k+=1
-                                                           
-        print(f"Jumlah data Sukses  : {k}")
-    except:
-        print("Link ini error...")
-        z+=1                                                                     # Apabila gambar tidak dapat diambil metadatanya
-        print(f"Jumlah data Gagal   : {z}")
+      print(f"Link : {a}")
+      print(y)
+      y+=1
+      urllib.request.urlretrieve(f"{a}", "image.jpg")                             # Mendownload URL dan menyimpannya sebagai file image.jpg
+      metaData = {}
+      
+      imgFile = Image.open("image.jpg")
+      out = f"Metadata/Metadata{x}.csv"
+      print ("Getting meta data...")
+      info = imgFile._getexif()
+      if info:
+        print ("found meta data!")
+        for (tag, value) in info.items():
+          tagname = TAGS.get(tag, tag)
+          metaData[tagname] = value                   
+          #print(tagname, value)
+          with open(out, 'w') as f:
+            for (tagname, value) in metaData.items():
+              f.write(str(tagname)+"\t"+\
+                str(value)+"\n")
+          df = pd.read_csv(open(f"Metadata/Metadata{x}.csv"), sep="\t", header=None)  
+          df['URL'] = a                                                                # Transpose CSV
+          df.to_csv(f"C:/ProgramData/MySQL/MySQL Server 5.7/Uploads/Metadata{x}URL.csv", sep="\t", header=None) #disimpan di lokasi yang bisa untuk LOAD DATA MySQL
+
+        x+=1        
+    except Exception as e:
+        print(e)                                                  # Apabila gambar tidak dapat diambil metadatanya
+  
+                 
+   
 else:
-    print("cannot process links")                                                   #Apabila Link tidak dapat di proses sama sekali
-    z+=1
+    print("cannot process links")
 
-
-print(f"Jumlah data Sukses  : {k}")
-print(f"Jumlah data Gagal   : {z}")
